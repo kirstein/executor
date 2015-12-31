@@ -3,5 +3,7 @@ module.exports = function(name, name2) {
     console.log('name2', name2);
     console.log('test pid', process.pid)
     console.error('asd');
-    throw new Error('what the fuck');
+    setTimeout(function() {
+        throw new Error('what the fuck');
+    }, 450)
 }
