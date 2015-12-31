@@ -1,0 +1,15 @@
+{
+    "env": {
+        "node": true
+    },
+    "ecmaFeatures": {
+        "generators": true,
+        "blockBindings": true
+    },
+    "rules": {
+        "strict": 0,
+        "quotes": [2, "single"],
+        "no-var": 1,
+        "prefer-const": 1,
+    }
+}
