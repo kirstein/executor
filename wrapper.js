@@ -1,4 +1,9 @@
-const EOL = require('os').EOL;
+function createError(pid, err) {
+    return {
+        stack: err.stack,
+        message: err.message || err,
+    }
+}
 
 function wrapper(path, args) {
     'use strict';
@@ -6,7 +11,7 @@ function wrapper(path, args) {
         const ret = require(path).apply(this, args);
         console.log(ret);
     } catch(err) {
-        console.error(err);
+        console.error(createError(process.pid, err));
         process.exit(1);
     }
 }
@@ -22,4 +27,4 @@ function parseArgs(args) {
 }
 
 const args = parseArgs(process.argv);
-eval('(' + wrapper(args.path, args.args) + ')');
+wrapper(args.path, args.args);

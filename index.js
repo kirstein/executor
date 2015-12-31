@@ -35,7 +35,6 @@ function getResult(results, error) {
         stderr: results.stderr,
         result: result
     }
-
 }
 
 function * execWrapper(fnPath, args) {
