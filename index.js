@@ -9,8 +9,7 @@ const EXECUTOR_OPTS_KEY = '__executor_opts-';
 
 function stringifyOpts(opts) {
     const res =  Object.keys(opts).filter(function(key) {
-        // Only filter out undefined values. We might need falsy ones
-        return typeof opts[key] !== 'undefined';
+        return opts[key];
     }).map(function(key) {
         return '--' + EXECUTOR_OPTS_KEY+ key + '=' + opts[key];
     });
@@ -50,6 +49,7 @@ function getResult(results, error) {
 }
 
 function * execWrapper(fnPath, args, opts) {
+    opts = opts || {};
     let spawnTimeout = null;
     const results = {
         stdout: [],
@@ -61,10 +61,12 @@ function * execWrapper(fnPath, args, opts) {
     });
     try {
         yield cp.spawn('node', cmd).progress(function(childProcess) {
-            spawnTimeout = setTimeout(function() {
-                pushLogEntry(results.stderr)('Function timed out');
-                childProcess.kill();
-            }, opts.timeout);
+            if (opts.timeout) {
+                spawnTimeout = setTimeout(function() {
+                    pushLogEntry(results.stderr)('Function timed out');
+                    childProcess.kill();
+                }, opts.timeout);
+            }
             childProcess.stderr.on('data', pushLogEntry(results.stderr));
             childProcess.stdout.on('data', pushLogEntry(results.stdout));
         });
@@ -76,7 +78,7 @@ function * execWrapper(fnPath, args, opts) {
     }
 }
 
-co.wrap(execWrapper)('./test.js', [ 'test paul', 'yo pets'], { timeout: 500 }).then(function(result) {
+co.wrap(execWrapper)('./test.js', [ 'test paul', 'yo pets'], { timeout: 500}).then(function(result) {
     console.log('res', result);
 }, function(errResult) {
     console.log('err', errResult);
