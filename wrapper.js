@@ -6,7 +6,6 @@ function createError(pid, err) {
 }
 
 function wrapper(path, args) {
-    'use strict';
     try {
         process.send({ result: require(path).apply(this, args) });
     } catch(err) {
