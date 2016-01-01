@@ -5,5 +5,5 @@ module.exports = function(name, name2) {
     console.error('asd');
     setTimeout(function() {
         throw new Error('what the fuck');
-    }, 550)
+    }, 440)
 }

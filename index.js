@@ -7,22 +7,12 @@ const co = require('co');
 const WRAPPER_PATH = './wrapper.js';
 const EXECUTOR_OPTS_KEY = '__executor_opts-';
 
-function stringifyOpts(opts) {
-    const res =  Object.keys(opts).filter(function(key) {
-        return opts[key];
-    }).map(function(key) {
-        return '--' + EXECUTOR_OPTS_KEY+ key + '=' + opts[key];
-    });
-    return res;
-}
-
-function buildCmd(fnPath, args, opts) {
+function buildCmd(fnPath, args) {
     const mappedArgs = (args || []).map(JSON.stringify);
-    const stringifiedOpts = stringifyOpts(opts || {});
     return [
         path.resolve(WRAPPER_PATH),
         path.resolve(fnPath)
-    ].concat(mappedArgs, stringifiedOpts);
+    ].concat(mappedArgs);
 }
 
 function pushLogEntry(logs) {
@@ -55,10 +45,7 @@ function * execWrapper(fnPath, args, opts) {
         stdout: [],
         stderr: []
     };
-    const remainingTime = opts.timeout && Date.now() + opts.timeout;
-    const cmd = buildCmd(fnPath, args, {
-        remainingTime: remainingTime
-    });
+    const cmd = buildCmd(fnPath, args);
     try {
         yield cp.spawn('node', cmd).progress(function(childProcess) {
             if (opts.timeout) {
@@ -78,7 +65,7 @@ function * execWrapper(fnPath, args, opts) {
     }
 }
 
-co.wrap(execWrapper)('./test.js', [ 'test paul', 'yo pets'], { timeout: 500}).then(function(result) {
+co.wrap(execWrapper)('./test.js', [ 'test paul', 'yo pets'], { timeout: 500 }).then(function(result) {
     console.log('res', result);
 }, function(errResult) {
     console.log('err', errResult);
