@@ -1,19 +1,9 @@
 'use strict';
 
 const path = require('path');
-const cp = require('child-process-promise');
-const co = require('co');
+const cp = require('child_process');
 
 const WRAPPER_PATH = './wrapper.js';
-const EXECUTOR_OPTS_KEY = '__executor_opts-';
-
-function buildCmd(fnPath, args) {
-    const mappedArgs = (args || []).map(JSON.stringify);
-    return [
-        path.resolve(WRAPPER_PATH),
-        path.resolve(fnPath)
-    ].concat(mappedArgs);
-}
 
 function pushLogEntry(logs) {
     return function(data) {
@@ -24,52 +14,39 @@ function pushLogEntry(logs) {
     }
 }
 
-function getResult(results, error) {
-    let result = null;
-    if (error) {
-        result = results.stderr.pop();
-    } else {
-        result = results.stdout.pop();
-    }
-    return {
-        stdout: results.stdout,
-        stderr: results.stderr,
-        result: result
-    }
-}
-
-function * execWrapper(fnPath, args, opts) {
+function execWrapper(fnPath, args, opts) {
     opts = opts || {};
+    fnPath = path.resolve(fnPath);
+    args = [ fnPath ].concat(args);
     let spawnTimeout = null;
     const results = {
         stdout: [],
-        stderr: []
+        stderr: [],
+        result: null
     };
-    const cmd = buildCmd(fnPath, args);
-    try {
-        yield cp.spawn('node', cmd).progress(function(childProcess) {
-            if (opts.timeout) {
-                spawnTimeout = setTimeout(function() {
-                    pushLogEntry(results.stderr)('Function timed out');
-                    childProcess.kill();
-                }, opts.timeout);
-            }
-            childProcess.stderr.on('data', pushLogEntry(results.stderr));
-            childProcess.stdout.on('data', pushLogEntry(results.stdout));
+    return new Promise(function(resolve, reject) {
+        const child = cp.fork(WRAPPER_PATH, args, { silent: true });
+        spawnTimeout = setTimeout(function() {
+            child.kill();
+            reject(new Error('Timed out'));
+        }, opts.timeout);
+        child.on('message', function(res) {
+            results.result = res.result;
         });
-        return getResult(results);
-    } catch(e) {
-        return yield Promise.reject(getResult(results, true));
-    } finally {
-        clearTimeout(spawnTimeout);
-    }
+        child.stdout.on('data', pushLogEntry(results.stdout));
+        child.stderr.on('data', pushLogEntry(results.stderr));
+        child.on('exit', function(code) {
+            clearTimeout(spawnTimeout);
+            if (code === 0) { return resolve(results); }
+            return reject(results);
+        });
+    });
 }
 
-co.wrap(execWrapper)('./test.js', [ 'test paul', 'yo pets'], { timeout: 500 }).then(function(result) {
+execWrapper('./test.js', [ 'test paul', 'yo pets'], { timeout: 500 }).then(function(result) {
     console.log('res', result);
 }, function(errResult) {
-    console.log('err', errResult);
     console.log('failure', errResult);
 }).catch(function(err) {
     console.log('err', err);
-})
+});

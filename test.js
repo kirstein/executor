@@ -4,6 +4,6 @@ module.exports = function(name, name2) {
     console.log('test pid', process.pid)
     console.error('asd');
     setTimeout(function() {
-        throw new Error('what the fuck');
-    }, 440)
+        console.log('what the hell?');
+    }, 500);
 }

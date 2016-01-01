@@ -8,10 +8,9 @@ function createError(pid, err) {
 function wrapper(path, args) {
     'use strict';
     try {
-        const ret = require(path).apply(this, args);
-        console.log(ret);
+        process.send({ result: require(path).apply(this, args) });
     } catch(err) {
-        console.error(createError(process.pid, err));
+        process.send({ result: createError(process.pid, err) });
         process.exit(1);
     }
 }
@@ -21,12 +20,8 @@ function parseArgs(args) {
         if (id === 2) { ret.path = val; }
         else if (id > 2) { ret.args.push(val); }
         return ret;
-
-    }, {
-        args: [],
-        opts: {}
-    });
+    }, { args: [] });
 }
 
 const args = parseArgs(process.argv);
-wrapper(args.path, args.args, args.opts);
+wrapper(args.path, args.args);

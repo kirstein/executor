@@ -9,7 +9,5 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "child-process-promise": "^1.1.0",
-    "co": "^4.6.0"
   }
 }
